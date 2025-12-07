@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>大關西螃蟹橫著走 - React 預覽</title>
+    
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { margin: 0; padding: 0; background-color: #f0f2f5; }
+        * { box-sizing: border-box; }
+        /* 簡單的動畫定義 */
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+
+const { useState, useRef, useMemo, useEffect } = React;
+
+// --- 1. 智慧匯入介面 (Smart Importer) ---
+const SmartImporter = ({ onClose, onConfirm }) => {
+  const [mode, setMode] = useState('photo'); // 'photo' or 'text'
+  const [step, setStep] = useState('input'); // 'input', 'analyzing', 'preview'
+  const [previewData, setPreviewData] = useState(null);
+  const fileInputRef = useRef(null);
+
+  // 模擬 AI 分析
+  const handleAnalyze = () => {
+    setStep('analyzing');
+    // 模擬 1.5 秒延遲
+    setTimeout(() => {
+      setStep('preview');
+      setPreviewData({
+        title: mode === 'photo' ? "清水寺夜間參拜" : "神戶牛排 Mouriya",
+        location: mode === 'photo' ? "京都清水寺" : "神戶三宮",
+        type: mode === 'photo' ? "娛樂" : "飲食",
+        cost: mode === 'photo' ? 400 : 12000,
+        date: "2/4",
+        note: "AI 自動擷取：建議提前預約"
+      });
+    }, 1500);
+  };
+
+  const handleSave = () => {
+    onConfirm(previewData);
+    onClose();
+  };
+
+  const styles = {
+    overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' },
+    sheet: { backgroundColor: '#fff', width: '100%', maxWidth: '400px', borderRadius: '25px 25px 0 0', padding: '25px', animation: 'slideUp 0.3s ease-out', position: 'relative', minHeight: '60vh', display: 'flex', flexDirection: 'column', fontFamily: '"Microsoft JhengHei", sans-serif' },
+    tabGroup: { display: 'flex', gap: '10px', marginBottom: '20px' },
+    tab: (active) => ({ flex: 1, padding: '10px', borderRadius: '12px', border: 'none', background: active ? '#FF9A9E' : '#F0F2F5', color: active ? 'white' : '#666', fontWeight: 'bold', cursor: 'pointer', transition: '0.3s' }),
+    uploadBox: { border: '2px dashed #FF9A9E', borderRadius: '15px', height: '150px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#FF9A9E', cursor: 'pointer', background: '#FFF0F0' },
+    analyzeBtn: { marginTop: 'auto', width: '100%', padding: '15px', borderRadius: '30px', background: 'linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%)', color: 'white', border: 'none', fontWeight: 'bold', fontSize: '16px', boxShadow: '0 4px 15px rgba(255, 100, 100, 0.3)', cursor: 'pointer' },
+    inputGroup: { marginBottom: '15px' },
+    label: { display: 'block', fontSize: '12px', color: '#888', marginBottom: '5px' },
+    input: { width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '16px', boxSizing: 'border-box' }
+  };
+
+  return (
+    <div style={styles.overlay}>
+      <div style={styles.sheet}>
+        <button onClick={onClose} style={{position:'absolute', right:'20px', top:'20px', border:'none', background:'none', fontSize:'20px', color:'#999'}}>✕</button>
+        <h2 style={{marginTop:0, color:'#333'}}>✨ 智慧行程匯入</h2>
+
+        {step === 'input' && (
+          <>
+            <div style={styles.tabGroup}>
+              <button style={styles.tab(mode === 'photo')} onClick={() => setMode('photo')}>📸 照片辨識</button>
+              <button style={styles.tab(mode === 'text')} onClick={() => setMode('text')}>📝 文字貼上</button>
+            </div>
+            <div style={{flex: 1}}>
+              {mode === 'photo' ? (
+                <div style={styles.uploadBox} onClick={() => fileInputRef.current.click()}>
+                  <span style={{fontSize:'40px'}}>📷</span>
+                  <span style={{marginTop:'10px'}}>點擊上傳截圖</span>
+                  <input type="file" ref={fileInputRef} hidden accept="image/*" onChange={handleAnalyze} />
+                </div>
+              ) : (
+                <textarea style={{width:'100%', height:'150px', padding:'15px', borderRadius:'15px', border:'1px solid #ddd', fontSize:'14px', resize:'none'}} placeholder="請貼上行程文字..." />
+              )}
+            </div>
+            <button style={styles.analyzeBtn} onClick={handleAnalyze}>{mode === 'photo' ? '開始辨識' : 'AI 分析'}</button>
+          </>
+        )}
+
+        {step === 'analyzing' && (
+          <div style={{textAlign:'center', padding:'40px', color:'#666', animation: 'pulse 1s infinite'}}>
+            <div style={{fontSize:'50px', marginBottom:'20px'}}>🔮</div>
+            <h3>正在分析行程...</h3>
+          </div>
+        )}
+
+        {step === 'preview' && previewData && (
+          <>
+            <div style={{marginBottom:'20px', color:'#666', fontSize:'14px'}}>請確認辨識結果：</div>
+            <div style={{overflowY:'auto', flex:1}}>
+              <div style={styles.inputGroup}><label style={styles.label}>標題</label><input style={styles.input} value={previewData.title} onChange={(e)=>setPreviewData({...previewData, title:e.target.value})} /></div>
+              <div style={styles.inputGroup}><label style={styles.label}>金額</label><input type="number" style={styles.input} value={previewData.cost} onChange={(e)=>setPreviewData({...previewData, cost:parseInt(e.target.value)})} /></div>
+            </div>
+            <button style={styles.analyzeBtn} onClick={handleSave}>確認加入 ✅</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// --- 2. 圓餅圖元件 ---
+const SimplePieChart = ({ data }) => {
+  const total = data.reduce((sum, item) => sum + item.value, 0);
+  let currentAngle = 0;
+  if (total === 0) return <div style={{textAlign:'center', color:'#999', padding:'20px'}}>尚無資料</div>;
+
+  return (
+    <div style={{ position: 'relative', width: '200px', height: '200px', margin: '0 auto' }}>
+      <svg viewBox="0 0 100 100" style={{ transform: 'rotate(-90deg)', borderRadius: '50%' }}>
+        {data.map((slice, i) => {
+          const sliceAngle = (slice.value / total) * 360;
+          const x1 = 50 + 50 * Math.cos((Math.PI * currentAngle) / 180);
+          const y1 = 50 + 50 * Math.sin((Math.PI * currentAngle) / 180);
+          const x2 = 50 + 50 * Math.cos((Math.PI * (currentAngle + sliceAngle)) / 180);
+          const y2 = 50 + 50 * Math.sin((Math.PI * (currentAngle + sliceAngle)) / 180);
+          const largeArcFlag = sliceAngle > 180 ? 1 : 0;
+          const pathData = `M 50 50 L ${x1} ${y1} A 50 50 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+          currentAngle += sliceAngle;
+          return <path key={i} d={pathData} fill={slice.color} stroke="#fff" strokeWidth="1" />;
+        })}
+        <circle cx="50" cy="50" r="35" fill="white" />
+      </svg>
+      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+        <div style={{fontSize: '10px', color:'#999'}}>總支出</div>
+        <div style={{fontSize: '14px', fontWeight: 'bold', color:'#333'}}>¥{total.toLocaleString()}</div>
+      </div>
+    </div>
+  );
+};
+
+// --- 3. 主程式 ---
+const KansaiTravelApp = () => {
+  const [activeTab, setActiveTab] = useState('itinerary');
+  const [showImporter, setShowImporter] = useState(false);
+  const [items, setItems] = useState([
+    { id: 1, date: "2/2", title: "大阪 難波", location: "難波八阪神社", type: "住宿", cost: 15000, note: "船上住宿" },
+    { id: 2, date: "2/3", title: "抵達門司港", location: "門司港", type: "住宿", cost: 12000, note: "福岡 Quintessa Hotel" },
+    { id: 3, date: "2/3", title: "燒咖哩午餐", location: "門司港茶寮", type: "飲食", cost: 3500, note: "必吃" }
+  ]);
+
+  const chartData = useMemo(() => {
+    const categories = {};
+    items.forEach(item => categories[item.type] = (categories[item.type] || 0) + item.cost);
+    const colors = { '住宿': '#FF6384', '飲食': '#FFCE56', '交通': '#36A2EB', '購物': '#4BC0C0', '娛樂': '#9966FF' };
+    return Object.keys(categories).map(k => ({ name: k, value: categories[k], color: colors[k] || '#ccc' }));
+  }, [items]);
+
+  const styles = {
+    container: { maxWidth: '400px', margin: '0 auto', fontFamily: '"Comic Sans MS", "Microsoft JhengHei", sans-serif', backgroundColor: '#FFF8F0', minHeight: '100vh', paddingBottom: '80px', position: 'relative' },
+    headerCard: { background: 'linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%)', padding: '25px 20px', borderRadius: '0 0 30px 30px', color: 'white', boxShadow: '0 4px 15px rgba(255, 100, 100, 0.3)', marginBottom: '20px' },
+    card: { background: 'white', margin: '10px 20px', padding: '15px', borderRadius: '15px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '15px' },
+    dateCircle: { width: '50px', height: '50px', borderRadius: '50%', background: '#333', color: '#F4B942', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: 'bold' },
+    smartBtn: { background: '#333', color: '#F4B942', border: 'none', padding: '5px 12px', borderRadius: '15px', fontSize: '12px', cursor: 'pointer' },
+    bottomNav: { position: 'fixed', bottom: 0, left: 0, right: 0, maxWidth: '400px', margin: '0 auto', background: 'white', padding: '15px', display: 'flex', justifyContent: 'space-around', boxShadow: '0 -2px 10px rgba(0,0,0,0.05)', borderRadius: '20px 20px 0 0', zIndex: 900 }
+  };
+
+  return (
+    <div style={styles.container}>
+      {showImporter && <SmartImporter onClose={() => setShowImporter(false)} onConfirm={(item) => setItems([...items, {...item, id: Date.now()}])} />}
+      
+      <div style={styles.headerCard}>
+        <div style={{fontSize: '24px', fontWeight: 'bold'}}>🦀 2026 關西螃蟹</div>
+        <div style={{marginTop:'10px', fontSize:'18px', fontWeight:'bold'}}>總支出: ¥{items.reduce((a,b)=>a+b.cost,0).toLocaleString()}</div>
+      </div>
+
+      {activeTab === 'itinerary' && (
+        <>
+          <div style={{padding:'0 20px', display:'flex', justifyContent:'space-between', alignItems:'center', fontWeight:'bold', color:'#E86A6A'}}>
+            <span>📅 行程</span>
+            <button style={styles.smartBtn} onClick={() => setShowImporter(true)}>✨ 智慧匯入</button>
+          </div>
+          {items.map(item => (
+            <div key={item.id} style={styles.card}>
+              <div style={styles.dateCircle}>{item.date}</div>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:'bold'}}>{item.title}</div>
+                <div style={{fontSize:'12px', color:'#888'}}>📍 {item.location}</div>
+              </div>
+              <div style={{fontWeight:'bold', color:'#E86A6A'}}>¥{item.cost.toLocaleString()}</div>
+            </div>
+          ))}
+        </>
+      )}
+
+      {activeTab === 'budget' && (
+        <div style={{padding:'20px'}}>
+           <div style={{textAlign:'center', fontWeight:'bold', marginBottom:'10px', color:'#E86A6A'}}>📊 預算分佈</div>
+           <div style={{background:'white', padding:'20px', borderRadius:'15px'}}>
+             <SimplePieChart data={chartData} />
+           </div>
+        </div>
+      )}
+
+      <div style={styles.bottomNav}>
+        <div onClick={()=>setActiveTab('itinerary')} style={{cursor:'pointer', color: activeTab==='itinerary'?'#E86A6A':'#ccc'}}>🗺️ 行程</div>
+        <div onClick={()=>setActiveTab('budget')} style={{cursor:'pointer', color: activeTab==='budget'?'#E86A6A':'#ccc'}}>💰 記帳</div>
+        <div style={{cursor:'pointer', color:'#ccc'}}>🛍️ 購物</div>
+      </div>
+    </div>
+  );
+};
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<KansaiTravelApp />);
+
+</script>
+</body>
+</html>
